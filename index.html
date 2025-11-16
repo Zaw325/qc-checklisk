@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QC Checklist</title>
+<!-- Tailwind CSS -->
+<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js"></script>
+<script>
+    // "Fresh Blue" Theme
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'header-blue': '#2563eb', // blue-600
+                    'button-dark': '#1f2937', // gray-800
+                    'button-light': '#3b82f6', // blue-500
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    @media print {
+        body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .no-print { display: none !important; }
+        .print-header {
+            background-color: #334155 !important; 
+            color: #ffffff !important;
+        }
+        .print-border { border: 1px solid #e5e7eb !important; }
+        .print-no-border { border: none !important; }
+        input[type="checkbox"] { display: none; }
+        /* Show checked state */
+        input[type="checkbox"]:checked + label::before {
+            content: '✔';
+            color: #2563eb;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        input[type="checkbox"]:not(:checked) + label::before {
+            content: '☐';
+            color: #9ca3af;
+            margin-right: 0.5rem;
+        }
+        #signature-pad { border: 2px solid #334155 !important; }
+    }
+
+    /* Signature Pad */
+    #signature-pad {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        cursor: crosshair;
+    }
+    .task-input {
+        border: none;
+        border-bottom: 1px dashed #ccc;
+        padding-left: 4px;
+        padding-right: 4px;
+        width: 90%;
+        outline: none;
+    }
+    .task-input:focus {
+        border-bottom: 1px solid #2563eb;
+    }
+</style>
+
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="max-w-2xl mx-auto p-4 md:p-8">
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+        
+        <!-- Header Section -->
+        <div class="p-6 md:p-8 text-center bg-gray-50"> 
+            <h1 class="text-xl font-semibold text-gray-700">
+                Mrs. Sparkle
+            </h1>
+            <h2 class="text-2xl font-bold text-gray-800 mt-2">
+                Quality Control Checklist
+            </h2>
+            <p id="current-date" class="text-sm text-gray-500 mt-1">Date: ...</p>
+        </div>
+        
+        <!-- Client Info -->
+        <div class="p-4 md:p-6 space-y-4">
+            <input type="text" id="client-name" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Client Name...">
+            <input type="text" id="client-address" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Address...">
+        </div>
+
+        <!-- Checklist Body -->
+        <div id="checklist-body" class="p-4 md:p-6 space-y-6">
+            <!-- Sections will be dynamically injected here -->
+        </div>
+
+        <!-- Add Section Button -->
+        <div class="p-4 md:p-6 bg-gray-50 border-t border-gray-100 no-print">
+            <button id="add-section-btn" class="w-full bg-button-dark text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span>Add Section (e.g., Kitchen)</span>
+            </button>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="p-4 md:p-6 border-t border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Customer Signature</h3>
+            <p class="text-sm text-gray-500 mb-3">I confirm that the service has been completed to my satisfaction.</p>
+            <div class="bg-gray-50 rounded-lg print-border">
+                <canvas id="signature-pad" width="500" height="200"></canvas>
+            </div>
+            <button id="clear-sig-btn" class="w-full text-sm text-blue-600 hover:text-blue-800 mt-2 text-right no-print">
+                Clear Signature
+            </button>
+        </div>
+
+        <!-- Print Button -->
+        <div class="p-6 bg-gray-100 border-t border-gray-200 flex gap-4 no-print">
+            <button id="print-btn" class="w-full bg-button-light text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i>
+                <span>Save & Print as PDF</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Elements ---
+        const dateElement = document.getElementById('current-date');
+        const checklistBody = document.getElementById('checklist-body');
+        const addSectionBtn = document.getElementById('add-section-btn');
+        const printBtn = document.getElementById('print-btn');
+        const canvas = document.getElementById('signature-pad');
+        const clearSigBtn = document.getElementById('clear-sig-btn');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        // --- Set Date ---
+        dateElement.textContent = `Date: ${new Date().toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        })}`;
+
+        // --- Signature Pad Logic ---
+        function getMousePos(canvasDom, mouseEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return {
+                x: mouseEvent.clientX - rect.left,
+                y: mouseEvent.clientY - rect.top
+            };
+        }
+        function getTouchPos(canvasDom, touchEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return {
+                x: touchEvent.touches[0].clientX - rect.left,
+                y: touchEvent.touches[0].clientY - rect.top
+            };
+        }
+        function startDrawing(e) {
+            e.preventDefault();
+            drawing = true;
+            const pos = e.touches ? getTouchPos(canvas, e) : getMousePos(canvas, e);
+            ctx.moveTo(pos.x, pos.y);
+        }
+        function stopDrawing() {
+            drawing = false;
+            ctx.beginPath();
+        }
+        function draw(e) {
+            e.preventDefault();
+            if (!drawing) return;
+            const pos = e.touches ? getTouchPos(canvas, e) : getMousePos(canvas, e);
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#1f2937'; // gray-800
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+        
+        // Canvas Resizing (Fix for high-DPI screens)
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Signature Event Listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
+        canvas.addEventListener('touchmove', draw);
+        clearSigBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // --- Checklist Logic ---
+
+        // Function to create a new Section
+        function createSectionElement(name = '') {
+            const sectionId = `section-${Date.now()}`;
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'bg-white rounded-lg border border-gray-200 p-4 page-break';
+            sectionDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <input type="text" class="text-xl font-bold text-gray-800 w-full border-b-2 border-gray-200 focus:border-blue-500 outline-none print-no-border" placeholder="Section Name (e.g., Living Room)" value="${name}">
+                    <button class="delete-section-btn text-gray-400 hover:text-red-500 no-print ml-2">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="task-list space-y-2">
+                    <!-- Tasks go here -->
+                </div>
+                <button class="add-task-btn text-sm text-blue-600 hover:text-blue-800 mt-3 no-print flex items-center gap-1">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Add Task
+                </button>
+            `;
+            
+            // Bind events for this new section
+            sectionDiv.querySelector('.add-task-btn').addEventListener('click', (e) => {
+                const taskList = e.target.closest('div').querySelector('.task-list');
+                taskList.appendChild(createTaskElement());
+                lucide.createIcons(); // Re-render icons
+            });
+            
+            sectionDiv.querySelector('.delete-section-btn').addEventListener('click', (e) => {
+                if (confirm('Are you sure you want to delete this entire section?')) {
+                    e.target.closest('.page-break').remove();
+                }
+            });
+            
+            return sectionDiv;
+        }
+
+        // Function to create a new Task
+        function createTaskElement(taskName = '') {
+            const taskId = `task-${Date.now()}`;
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'flex items-center gap-2';
+            
+            taskDiv.innerHTML = `
+                <input id="${taskId}" type="checkbox" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 no-print">
+                <label for="${taskId}" class="flex-1 flex items-center">
+                    <span class="print-only"></span> <!-- For print symbol -->
+                    <input type="text" class="task-input text-gray-700" placeholder="Enter task name..." value="${taskName}">
+                </label>
+                <button class="delete-task-btn text-gray-300 hover:text-red-500 no-print">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            `;
+            
+            taskDiv.querySelector('.delete-task-btn').addEventListener('click', (e) => {
+                e.target.closest('.flex').remove();
+            });
+            
+            return taskDiv;
+        }
+
+        // --- Main Button Bindings ---
+        addSectionBtn.addEventListener('click', () => {
+            const newSection = createSectionElement();
+            checklistBody.appendChild(newSection);
+            lucide.createIcons(); // Re-render icons
+        });
+        
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // --- Initial Load ---
+        const defaultSection = createSectionElement('Example Section');
+        checklistBody.appendChild(defaultSection);
+
+Read-Only
+defaultSection.querySelector('.task-list').appendChild(createTaskElement('Floors mopped & vacuumed'));
+defaultSection.querySelector('.task-list').appendChild(createTaskElement('Windows & mirrors cleaned'));
+        lucide.createIcons();
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+"short_name": "QC Checklist",
+"name": "Mrs. Sparkle QC Checklist",
+"icons": [
+{
+"src": "https://www.google.com/search?q=https://placehold.co/192x192/2563eb/ffffff%3Ftext%3DQC",
+"type": "image/png",
+"sizes": "192x192"
+},
+{
+"src": "https://www.google.com/search?q=https://placehold.co/512x512/2563eb/ffffff%3Ftext%3DQC",
+"type": "image/png",
+"sizes": "512x512"
+}
+],
+"start_url": ".",
+"display": "standalone",
+"theme_color": "#2563eb",
+"background_color": "#ffffff"
+}

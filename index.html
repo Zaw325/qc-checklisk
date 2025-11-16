@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QC Checklist</title>
+<title>QC Checklist V3</title>
 <!-- Tailwind CSS -->
 <script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
 <!-- Lucide Icons -->
@@ -32,19 +32,15 @@
             color: #ffffff !important;
         }
         .print-border { border: 1px solid #e5e7eb !important; }
-        .print-no-border { border: none !important; }
+        .print-no-border { border: none !important; padding-left: 0; }
+        input[type="text"] { border: none; }
         input[type="checkbox"] { display: none; }
         /* Show checked state */
         input[type="checkbox"]:checked + label::before {
-            content: '✔';
-            color: #2563eb;
-            font-weight: bold;
-            margin-right: 0.5rem;
+            content: '✔'; color: #2563eb; font-weight: bold; margin-right: 0.5rem;
         }
         input[type="checkbox"]:not(:checked) + label::before {
-            content: '☐';
-            color: #9ca3af;
-            margin-right: 0.5rem;
+            content: '☐'; color: #9ca3af; margin-right: 0.5rem;
         }
         #signature-pad { border: 2px solid #334155 !important; }
     }
@@ -58,19 +54,37 @@
     .task-input {
         border: none;
         border-bottom: 1px dashed #ccc;
-        padding-left: 4px;
-        padding-right: 4px;
-        width: 90%;
-        outline: none;
+        padding-left: 4px; padding-right: 4px;
+        width: 90%; outline: none;
     }
-    .task-input:focus {
-        border-bottom: 1px solid #2563eb;
+    .task-input:focus { border-bottom: 1px solid #2563eb; }
+    
+    /* Login Shake Animation */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
     }
+    .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 </style>
 
 </head>
 <body class="bg-gray-100 min-h-screen">
-<div class="max-w-2xl mx-auto p-4 md:p-8">
+<!-- 1. Login Modal (FEATURE 3) -->
+<div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+        <h3 class="text-xl font-bold text-gray-800 text-center mb-4">Mrs. Sparkle</h3>
+        <p class="text-center text-gray-600 mb-6">QC Checklist Login</p>
+        <input type="password" id="password-input" placeholder="Password..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-shadow text-center">
+        <button id="unlock-button" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold mt-4 hover:bg-blue-700 transition-colors shadow-md">
+            Unlock
+        </button>
+        <p id="error-msg" class="text-red-600 text-sm mt-3 text-center hidden font-medium"></p>
+    </div>
+</div>
+
+<!-- 2. Main App (Hidden by default) -->
+<div id="app-container" class="max-w-2xl mx-auto p-4 md:p-8 hidden opacity-0 transition-opacity duration-500">
     <div class="bg-white rounded-lg shadow-xl overflow-hidden">
         
         <!-- Header Section -->
@@ -84,10 +98,10 @@
             <p id="current-date" class="text-sm text-gray-500 mt-1">Date: ...</p>
         </div>
         
-        <!-- Client Info -->
-        <div class="p-4 md:p-6 space-y-4">
-            <input type="text" id="client-name" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Client Name...">
-            <input type="text" id="client-address" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Address...">
+        <!-- Client Info (Auto-Saved) -->
+        <div class="p-4 md:p-6 space-y-4" id="client-info-form">
+            <input type="text" id="client-name" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Client Name..." data-save="client.name">
+            <input type="text" id="client-address" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Address..." data-save="client.address">
         </div>
 
         <!-- Checklist Body -->
@@ -95,11 +109,19 @@
             <!-- Sections will be dynamically injected here -->
         </div>
 
-        <!-- Add Section Button -->
+        <!-- Add Section Buttons (FEATURE 1) -->
         <div class="p-4 md:p-6 bg-gray-50 border-t border-gray-100 no-print">
-            <button id="add-section-btn" class="w-full bg-button-dark text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
-                <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                <span>Add Section (e.g., Kitchen)</span>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Add Pre-defined Sections</label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <!-- Updated Buttons -->
+                <button id="add-kitchen-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Kitchen</button>
+                <button id="add-living-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Living Room</button>
+                <button id="add-master-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Master Room</button>
+                <button id="add-guest-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Guest Room</button>
+            </div>
+            <button id="add-custom-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Add Custom Section</span>
             </button>
         </div>
 
@@ -115,105 +137,193 @@
             </button>
         </div>
 
-        <!-- Print Button -->
-        <div class="p-6 bg-gray-100 border-t border-gray-200 flex gap-4 no-print">
+        <!-- Action Buttons -->
+        <div class="p-6 bg-gray-100 border-t border-gray-200 grid grid-cols-2 gap-4 no-print">
+            <button id="clear-all-btn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <span>Clear All</span>
+            </button>
             <button id="print-btn" class="w-full bg-button-light text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="printer" class="w-5 h-5"></i>
-                <span>Save & Print as PDF</span>
+                <span>Save & Print</span>
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- DOM Elements ---
-        const dateElement = document.getElementById('current-date');
-        const checklistBody = document.getElementById('checklist-body');
-        const addSectionBtn = document.getElementById('add-section-btn');
-        const printBtn = document.getElementById('print-btn');
-        const canvas = document.getElementById('signature-pad');
-        const clearSigBtn = document.getElementById('clear-sig-btn');
-        const ctx = canvas.getContext('2d');
-        let drawing = false;
+    // --- 1. LOGIN LOGIC ---
+    
+    const CORRECT_PASSWORD = 'joeclean';
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginBox = loginOverlay.querySelector('div');
+    const appContainer = document.getElementById('app-container');
+    const unlockButton = document.getElementById('unlock-button');
+    const passwordInput = document.getElementById('password-input');
+    const errorMsg = document.getElementById('error-msg');
 
-        // --- Set Date ---
-        dateElement.textContent = `Date: ${new Date().toLocaleDateString('en-US', {
-            year: 'numeric', month: 'long', day: 'numeric'
-        })}`;
+    const attemptLogin = () => {
+        const pass = passwordInput.value;
+        if (pass === CORRECT_PASSWORD) {
+            loginOverlay.classList.add('opacity-0');
+            setTimeout(() => { loginOverlay.style.display = 'none'; }, 300); 
+            appContainer.classList.remove('hidden');
+            setTimeout(() => appContainer.classList.remove('opacity-0'), 50);
+            App.init(); // Initialize the main app
+        } else {
+            errorMsg.textContent = 'Incorrect Password.';
+            errorMsg.classList.remove('hidden');
+            passwordInput.value = '';
+            loginBox.classList.add('animate-shake');
+            setTimeout(() => loginBox.classList.remove('animate-shake'), 500);
+        }
+    };
+    
+    unlockButton.onclick = attemptLogin;
+    passwordInput.onkeyup = (e) => {
+        errorMsg.classList.add('hidden');
+        if (e.key === 'Enter') attemptLogin();
+    };
 
-        // --- Signature Pad Logic ---
-        function getMousePos(canvasDom, mouseEvent) {
-            const rect = canvasDom.getBoundingClientRect();
-            return {
-                x: mouseEvent.clientX - rect.left,
-                y: mouseEvent.clientY - rect.top
-            };
-        }
-        function getTouchPos(canvasDom, touchEvent) {
-            const rect = canvasDom.getBoundingClientRect();
-            return {
-                x: touchEvent.touches[0].clientX - rect.left,
-                y: touchEvent.touches[0].clientY - rect.top
-            };
-        }
-        function startDrawing(e) {
-            e.preventDefault();
-            drawing = true;
-            const pos = e.touches ? getTouchPos(canvas, e) : getMousePos(canvas, e);
-            ctx.moveTo(pos.x, pos.y);
-        }
-        function stopDrawing() {
-            drawing = false;
-            ctx.beginPath();
-        }
-        function draw(e) {
-            e.preventDefault();
-            if (!drawing) return;
-            const pos = e.touches ? getTouchPos(canvas, e) : getMousePos(canvas, e);
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#1f2937'; // gray-800
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        }
+    // --- 2. MAIN APP LOGIC ---
+
+    const App = {
+        SAVE_KEY: 'qcChecklistData_v2', // Changed key for new data structure
         
-        // Canvas Resizing (Fix for high-DPI screens)
-        function resizeCanvas() {
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            canvas.style.width = `${rect.width}px`;
-            canvas.style.height = `${rect.height}px`;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        // --- UPDATED TASK LISTS ---
+        STANDARD_TASKS: ['Floor', 'Cupboards', 'Skirting board and switch', 'Windows', 'Doors'],
+        KITCHEN_EXTRA_TASKS: ['Oven', 'Cooker hood', 'fridge', 'Washing machine & Dryer', 'Dishwasher'],
+        
+        data: {
+            client: { name: '', address: '' },
+            sections: [],
+            signature: null
+        },
+        canvas: null,
+        ctx: null,
+        drawing: false,
 
-        // Signature Event Listeners
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseout', stopDrawing);
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchend', stopDrawing);
-        canvas.addEventListener('touchmove', draw);
-        clearSigBtn.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
+        init() {
+            // DOM Elements
+            this.dateElement = document.getElementById('current-date');
+            this.checklistBody = document.getElementById('checklist-body');
+            this.canvas = document.getElementById('signature-pad');
+            this.ctx = this.canvas.getContext('2d');
 
-        // --- Checklist Logic ---
+            // Set Date
+            this.dateElement.textContent = `Date: ${new Date().toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            })}`;
 
-        // Function to create a new Section
-        function createSectionElement(name = '') {
-            const sectionId = `section-${Date.now()}`;
+            // --- UPDATED Button Bindings ---
+            document.getElementById('add-kitchen-btn').onclick = () => {
+                const kitchenTasks = [...this.STANDARD_TASKS, ...this.KITCHEN_EXTRA_TASKS];
+                this.addSection('Kitchen', kitchenTasks);
+            };
+            document.getElementById('add-living-btn').onclick = () => this.addSection('Living Room', this.STANDARD_TASKS);
+            document.getElementById('add-master-btn').onclick = () => this.addSection('Master Room', this.STANDARD_TASKS);
+            document.getElementById('add-guest-btn').onclick = () => this.addSection('Guest Room', this.STANDARD_TASKS);
+            document.getElementById('add-custom-btn').onclick = () => this.addSection('Custom Section', []);
+            
+            document.getElementById('clear-all-btn').onclick = () => this.handleClearAll();
+            document.getElementById('print-btn').onclick = () => window.print();
+
+            // Bind Auto-Save Events
+            document.getElementById('client-info-form').addEventListener('input', () => this.saveData());
+            this.checklistBody.addEventListener('input', () => this.saveData());
+
+            // Init Signature Pad
+            this.initSignaturePad();
+            
+            // Load, Render, and Init Icons
+            this.loadData();
+            this.renderAll();
+            lucide.createIcons();
+        },
+
+        // --- Auto-Save & Load (FEATURE 2) ---
+        
+        saveData() {
+            const data = {
+                client: {
+                    name: document.getElementById('client-name').value,
+                    address: document.getElementById('client-address').value
+                },
+                sections: [],
+                signature: this.canvas.toDataURL() // Save signature image
+            };
+
+            document.querySelectorAll('.section-card').forEach(sectionEl => {
+                const section = {
+                    id: sectionEl.dataset.id,
+                    name: sectionEl.querySelector('.section-name-input').value,
+                    tasks: []
+                };
+                sectionEl.querySelectorAll('.task-item').forEach(taskEl => {
+                    section.tasks.push({
+                        id: taskEl.dataset.id,
+                        name: taskEl.querySelector('.task-input').value,
+                        checked: taskEl.querySelector('input[type="checkbox"]').checked
+                    });
+                });
+                data.sections.push(section);
+            });
+            
+            this.data = data;
+            localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.data));
+            console.log('Data saved to localStorage');
+        },
+
+        loadData() {
+            const savedData = localStorage.getItem(this.SAVE_KEY);
+            if (savedData) {
+                this.data = JSON.parse(savedData);
+                document.getElementById('client-name').value = this.data.client.name;
+                document.getElementById('client-address').value = this.data.client.address;
+                if (this.data.signature) {
+                    const img = new Image();
+                    img.onload = () => { this.ctx.drawImage(img, 0, 0); };
+                    img.src = this.data.signature;
+                }
+            } else {
+                // Start with one example section if no data
+                this.data.sections = [{
+                    id: `section-${Date.now()}`,
+                    name: 'Living Room (Example)',
+                    tasks: this.STANDARD_TASKS.map((taskName, i) => ({
+                        id: `task-${Date.now() + i}`,
+                        name: taskName,
+                        checked: false
+                    }))
+                }];
+            }
+        },
+        
+        handleClearAll() {
+            if (confirm('This will clear all data, including client info and signature. Are you sure?')) {
+                localStorage.removeItem(this.SAVE_KEY);
+                window.location.reload(); // Easiest way to reset everything
+            }
+        },
+
+        // --- Checklist Rendering ---
+
+        renderAll() {
+            this.checklistBody.innerHTML = ''; // Clear all sections
+            this.data.sections.forEach(section => {
+                this.checklistBody.appendChild(this.createSectionElement(section));
+            });
+            lucide.createIcons();
+        },
+        
+        createSectionElement(section) {
             const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'bg-white rounded-lg border border-gray-200 p-4 page-break';
+            sectionDiv.className = 'section-card bg-white rounded-lg border border-gray-200 p-4 page-break';
+            sectionDiv.dataset.id = section.id;
+            
             sectionDiv.innerHTML = `
                 <div class="flex justify-between items-center mb-3">
-                    <input type="text" class="text-xl font-bold text-gray-800 w-full border-b-2 border-gray-200 focus:border-blue-500 outline-none print-no-border" placeholder="Section Name (e.g., Living Room)" value="${name}">
+                    <input type="text" class="section-name-input text-xl font-bold text-gray-800 w-full border-b-2 border-gray-200 focus:border-blue-500 outline-none print-no-border" placeholder="Section Name" value="${section.name}">
                     <button class="delete-section-btn text-gray-400 hover:text-red-500 no-print ml-2">
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                     </button>
@@ -223,70 +333,155 @@
                 </div>
                 <button class="add-task-btn text-sm text-blue-600 hover:text-blue-800 mt-3 no-print flex items-center gap-1">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    Add Task
+                    Add Custom Task
                 </button>
             `;
+
+            const taskList = sectionDiv.querySelector('.task-list');
+            section.tasks.forEach(task => {
+                taskList.appendChild(this.createTaskElement(task));
+            });
             
             // Bind events for this new section
-            sectionDiv.querySelector('.add-task-btn').addEventListener('click', (e) => {
-                const taskList = e.target.closest('div').querySelector('.task-list');
-                taskList.appendChild(createTaskElement());
-                lucide.createIcons(); // Re-render icons
-            });
-            
-            sectionDiv.querySelector('.delete-section-btn').addEventListener('click', (e) => {
-                if (confirm('Are you sure you want to delete this entire section?')) {
-                    e.target.closest('.page-break').remove();
-                }
-            });
+            sectionDiv.querySelector('.add-task-btn').addEventListener('click', (e) => this.handleAddTask(e, section.id));
+            sectionDiv.querySelector('.delete-section-btn').addEventListener('click', (e) => this.handleDeleteSection(e, section.id));
             
             return sectionDiv;
-        }
+        },
 
-        // Function to create a new Task
-        function createTaskElement(taskName = '') {
-            const taskId = `task-${Date.now()}`;
+        createTaskElement(task) {
+            const taskId = `task-${task.id}`;
             const taskDiv = document.createElement('div');
-            taskDiv.className = 'flex items-center gap-2';
+            taskDiv.className = 'task-item flex items-center gap-2';
+            taskDiv.dataset.id = task.id;
             
             taskDiv.innerHTML = `
-                <input id="${taskId}" type="checkbox" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 no-print">
+                <input id="${taskId}" type="checkbox" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 no-print" ${task.checked ? 'checked' : ''}>
                 <label for="${taskId}" class="flex-1 flex items-center">
                     <span class="print-only"></span> <!-- For print symbol -->
-                    <input type="text" class="task-input text-gray-700" placeholder="Enter task name..." value="${taskName}">
+                    <input type="text" class="task-input text-gray-700" placeholder="Enter task name..." value="${task.name}">
                 </label>
                 <button class="delete-task-btn text-gray-300 hover:text-red-500 no-print">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             `;
             
-            taskDiv.querySelector('.delete-task-btn').addEventListener('click', (e) => {
-                e.target.closest('.flex').remove();
-            });
-            
+            taskDiv.querySelector('.delete-task-btn').addEventListener('click', (e) => this.handleDeleteTask(e, task.id));
             return taskDiv;
-        }
+        },
 
-        // --- Main Button Bindings ---
-        addSectionBtn.addEventListener('click', () => {
-            const newSection = createSectionElement();
-            checklistBody.appendChild(newSection);
-            lucide.createIcons(); // Re-render icons
-        });
+        // --- Checklist Event Handlers ---
         
-        printBtn.addEventListener('click', () => {
-            window.print();
-        });
+        addSection(name, tasks) {
+            const newSection = {
+                id: `section-${Date.now()}`,
+                name: name,
+                tasks: tasks.map((taskName, i) => ({
+                    id: `task-${Date.now() + i}`,
+                    name: taskName,
+                    checked: false
+                }))
+            };
+            this.data.sections.push(newSection);
+            this.renderAll();
+            this.saveData();
+        },
 
-        // --- Initial Load ---
-        const defaultSection = createSectionElement('Example Section');
-        checklistBody.appendChild(defaultSection);
+        handleAddTask(e, sectionId) {
+            const section = this.data.sections.find(s => s.id === sectionId);
+            section.tasks.push({
+                id: `task-${Date.now()}`,
+                name: '',
+                checked: false
+            });
+            this.renderAll(); // Re-render to add the new task
+            this.saveData();
+        },
 
-Read-Only
-defaultSection.querySelector('.task-list').appendChild(createTaskElement('Floors mopped & vacuumed'));
-defaultSection.querySelector('.task-list').appendChild(createTaskElement('Windows & mirrors cleaned'));
-        lucide.createIcons();
-    });
+        handleDeleteSection(e, sectionId) {
+            if (confirm('Are you sure you want to delete this entire section?')) {
+                this.data.sections = this.data.sections.filter(s => s.id !== sectionId);
+                this.renderAll();
+                this.saveData();
+            }
+        },
+        
+        handleDeleteTask(e, taskId) {
+            this.data.sections.forEach(section => {
+                section.tasks = section.tasks.filter(t => t.id !== taskId);
+            });
+            this.renderAll();
+            this.saveData();
+        },
+
+        // --- Signature Pad Logic ---
+        initSignaturePad() {
+            const resizeCanvas = () => {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width * window.devicePixelRatio;
+                this.canvas.height = rect.height * window.devicePixelRatio;
+                this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                this.canvas.style.width = `${rect.width}px`;
+                this.canvas.style.height = `${rect.height}px`;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                if (this.data.signature) {
+                     const img = new Image();
+                     img.onload = () => { this.ctx.drawImage(img, 0, 0); };
+                     img.src = this.data.signature;
+                }
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            const getPos = (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const evt = e.touches ? e.touches[0] : e;
+                return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+            };
+            const startDrawing = (e) => {
+                e.preventDefault();
+                this.drawing = true;
+                const pos = getPos(e);
+                this.ctx.moveTo(pos.x, pos.y);
+            };
+            const stopDrawing = (e) => {
+                if (!this.drawing) return;
+                this.drawing = false;
+                this.ctx.beginPath();
+                // Auto-save signature when drawing stops
+                setTimeout(() => this.saveData(), 100); 
+            };
+            const draw = (e) => {
+                e.preventDefault();
+                if (!this.drawing) return;
+                const pos = getPos(e);
+                this.ctx.lineWidth = 3;
+                this.ctx.lineCap = 'round';
+                this.ctx.strokeStyle = '#1f2937';
+                this.ctx.lineTo(pos.x, pos.y);
+                this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos.x, pos.y);
+            };
+            
+            this.canvas.addEventListener('mousedown', startDrawing);
+            this.canvas.addEventListener('mouseup', stopDrawing);
+            this.canvas.addEventListener('mousemove', draw);
+            this.canvas.addEventListener('mouseout', stopDrawing);
+            this.canvas.addEventListener('touchstart', startDrawing);
+            this.canvas.addEventListener('touchend', stopDrawing);
+            this.canvas.addEventListener('touchmove', draw);
+            
+            document.getElementById('clear-sig-btn').addEventListener('click', () => {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.data.signature = null; // Clear from data
+                this.saveData(); // Save the cleared signature
+            });
+        }
+    };
+    
+    // Note: App.init() is NOT called here.
+    // It is called by the login script after a successful login.
 </script>
 
 </body>

@@ -1,9 +1,9 @@
-const CACHE_NAME = 'qc-checklist-v1';
-const REPO_NAME = 'qc-checklist'; // <-- အစ်ကို့ Repo နာမည်ကို ဒီမှာ ပြောင်းနိုင်ပါတယ်
-​const URLS_TO_CACHE = [
-/${REPO_NAME}/,
-/${REPO_NAME}/index.html,
-/${REPO_NAME}/manifest.json,
+const CACHE_NAME = 'qc-checklist-v2'; // Cache version အသစ် ပြောင်းလိုက်ပါပြီ
+​// V5 FIX: REPO_NAME ကို ဖြုတ်ပြီး Relative Paths (./) ကို ပြောင်းသုံးထားပါတယ်
+const URLS_TO_CACHE = [
+'./',
+'./index.html',
+'./manifest.json',
 'https://www.google.com/search?q=https://cdn.tailwindcss.com',
 'https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js',
 'https://www.google.com/search?q=https://placehold.co/192x192/2563eb/ffffff%3Ftext%3DQC',

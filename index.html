@@ -483,7 +483,8 @@
     // --- 3. PWA Service Worker Registration (NEW) ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
+            // Use './sw.js' to be explicit about the root
+            navigator.serviceWorker.register('./sw.js') 
                 .then(registration => {
                     console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 })
@@ -492,7 +493,6 @@
                 });
         });
     }
-
 </script>
 
 </body>

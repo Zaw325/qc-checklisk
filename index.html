@@ -3,11 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QC Checklist V3</title>
+<title>QC Checklist V4</title>
 <!-- Tailwind CSS -->
 <script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
 <!-- Lucide Icons -->
 <script src="https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js"></script>
+<!-- PWA (Installable App) STUFF (NEW) -->
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<!-- END PWA STUFF -->
+
 <script>
     // "Fresh Blue" Theme
     tailwind.config = {
@@ -35,7 +40,6 @@
         .print-no-border { border: none !important; padding-left: 0; }
         input[type="text"] { border: none; }
         input[type="checkbox"] { display: none; }
-        /* Show checked state */
         input[type="checkbox"]:checked + label::before {
             content: '✔'; color: #2563eb; font-weight: bold; margin-right: 0.5rem;
         }
@@ -44,8 +48,6 @@
         }
         #signature-pad { border: 2px solid #334155 !important; }
     }
-
-    /* Signature Pad */
     #signature-pad {
         border: 2px dashed #d1d5db;
         border-radius: 0.5rem;
@@ -58,8 +60,6 @@
         width: 90%; outline: none;
     }
     .task-input:focus { border-bottom: 1px solid #2563eb; }
-    
-    /* Login Shake Animation */
     @keyframes shake {
         0%, 100% { transform: translateX(0); }
         10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -480,8 +480,19 @@
         }
     };
     
-    // Note: App.init() is NOT called here.
-    // It is called by the login script after a successful login.
+    // --- 3. PWA Service Worker Registration (NEW) ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
+
 </script>
 
 </body>

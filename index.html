@@ -3,15 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QC Checklist V4</title>
+<title>QC Checklist V5 (Firebase)</title>
 <!-- Tailwind CSS -->
-<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 <!-- Lucide Icons -->
-<script src="https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js"></script>
-<!-- PWA (Installable App) STUFF (NEW) -->
+<script src="https://unpkg.com/lucide-react@0.395.0/dist/umd/lucide.js"></script>
+
+<!-- Firebase Libraries (NEW) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+<!-- PWA (Installable App) STUFF -->
 <meta name="theme-color" content="#2563eb">
 <link rel="manifest" href="manifest.json">
-<!-- END PWA STUFF -->
 
 <script>
     // "Fresh Blue" Theme
@@ -70,14 +75,15 @@
 
 </head>
 <body class="bg-gray-100 min-h-screen">
-<!-- 1. Login Modal (FEATURE 3) -->
+<!-- 1. Login Modal (NEW: Firebase Auth) -->
 <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm mx-4">
         <h3 class="text-xl font-bold text-gray-800 text-center mb-4">Mrs. Sparkle</h3>
         <p class="text-center text-gray-600 mb-6">QC Checklist Login</p>
-        <input type="password" id="password-input" placeholder="Password..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-shadow text-center">
+        <input type="email" id="email-input" placeholder="Email..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-shadow">
+        <input type="password" id="password-input" placeholder="Password..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-shadow mt-2">
         <button id="unlock-button" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold mt-4 hover:bg-blue-700 transition-colors shadow-md">
-            Unlock
+            Sign In
         </button>
         <p id="error-msg" class="text-red-600 text-sm mt-3 text-center hidden font-medium"></p>
     </div>
@@ -85,6 +91,16 @@
 
 <!-- 2. Main App (Hidden by default) -->
 <div id="app-container" class="max-w-2xl mx-auto p-4 md:p-8 hidden opacity-0 transition-opacity duration-500">
+    
+    <!-- App Header -->
+    <div class="flex justify-between items-center mb-4 no-print">
+        <h2 class="text-lg font-bold text-gray-700">Inspector Portal</h2>
+        <button id="logout-button" class="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            Logout
+        </button>
+    </div>
+    
     <div class="bg-white rounded-lg shadow-xl overflow-hidden">
         
         <!-- Header Section -->
@@ -109,11 +125,10 @@
             <!-- Sections will be dynamically injected here -->
         </div>
 
-        <!-- Add Section Buttons (FEATURE 1) -->
+        <!-- Add Section Buttons -->
         <div class="p-4 md:p-6 bg-gray-50 border-t border-gray-100 no-print">
             <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Add Pre-defined Sections</label>
             <div class="grid grid-cols-2 gap-2 mb-2">
-                <!-- Updated Buttons -->
                 <button id="add-kitchen-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Kitchen</button>
                 <button id="add-living-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Living Room</button>
                 <button id="add-master-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Master Room</button>
@@ -141,59 +156,123 @@
         <div class="p-6 bg-gray-100 border-t border-gray-200 grid grid-cols-2 gap-4 no-print">
             <button id="clear-all-btn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="trash-2" class="w-5 h-5"></i>
-                <span>Clear All</span>
+                <span>Clear Form</span>
             </button>
-            <button id="print-btn" class="w-full bg-button-light text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
-                <i data-lucide="printer" class="w-5 h-5"></i>
-                <span>Save & Print</span>
+            <button id="submit-btn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-5 h-5"></i>
+                <span id="submit-btn-text">Submit to Office</span>
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- 1. LOGIN LOGIC ---
+    // --- 1. FIREBASE CONFIG ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyuCbPWKCcWYqPCcxW92wE2nZFUu_hC-c",
+      authDomain: "mrs-sparkles-qc-app.firebaseapp.com",
+      projectId: "mrs-sparkles-qc-app",
+      storageBucket: "mrs-sparkles-qc-app.firebasestorage.app",
+      messagingSenderId: "692678390922",
+      appId: "1:692678390922:web:7cb5b1275e334f9fb0a973"
+    };
     
-    const CORRECT_PASSWORD = 'joeclean';
-    const loginOverlay = document.getElementById('login-overlay');
-    const loginBox = loginOverlay.querySelector('div');
-    const appContainer = document.getElementById('app-container');
-    const unlockButton = document.getElementById('unlock-button');
-    const passwordInput = document.getElementById('password-input');
-    const errorMsg = document.getElementById('error-msg');
+    // --- 2. GLOBAL VARS ---
+    let db;
+    let auth;
+    let currentUser; // Store the logged-in user
 
-    const attemptLogin = () => {
-        const pass = passwordInput.value;
-        if (pass === CORRECT_PASSWORD) {
-            loginOverlay.classList.add('opacity-0');
-            setTimeout(() => { loginOverlay.style.display = 'none'; }, 300); 
-            appContainer.classList.remove('hidden');
-            setTimeout(() => appContainer.classList.remove('opacity-0'), 50);
+    // --- 3. LOGIN LOGIC ---
+    const Login = {
+        init() {
+            // Get elements
+            this.loginOverlay = document.getElementById('login-overlay');
+            this.loginBox = this.loginOverlay.querySelector('div');
+            this.appContainer = document.getElementById('app-container');
+            this.unlockButton = document.getElementById('unlock-button');
+            this.emailInput = document.getElementById('email-input');
+            this.passwordInput = document.getElementById('password-input');
+            this.errorMsg = document.getElementById('error-msg');
+            
+            // Bind events
+            this.unlockButton.onclick = () => this.attemptLogin();
+            this.passwordInput.onkeyup = (e) => {
+                this.errorMsg.classList.add('hidden');
+                if (e.key === 'Enter') this.attemptLogin();
+            };
+            
+            // Initialize Firebase
+            try {
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                console.log("Firebase Initialized.");
+                
+                // Check login state
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        this.showApp(user);
+                    } else {
+                        this.showLogin();
+                    }
+                });
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+                document.body.innerHTML = "Error loading Firebase. Please check internet connection.";
+            }
+        },
+        
+        attemptLogin() {
+            const email = this.emailInput.value;
+            const pass = this.passwordInput.value;
+            
+            if (!email || !pass) {
+                this.showError('Please enter email and password.');
+                return;
+            }
+            
+            this.errorMsg.classList.add('hidden');
+            
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(userCredential => {
+                    // Success, onAuthStateChanged will handle showing the app
+                    console.log('Login successful');
+                })
+                .catch(error => {
+                    this.showError(error.message);
+                });
+        },
+        
+        showError(message) {
+            this.errorMsg.textContent = message;
+            this.errorMsg.classList.remove('hidden');
+            this.loginBox.classList.add('animate-shake');
+            setTimeout(() => this.loginBox.classList.remove('animate-shake'), 500);
+        },
+        
+        showApp(user) {
+            currentUser = user; // Save the user
+            this.loginOverlay.classList.add('opacity-0');
+            setTimeout(() => { this.loginOverlay.style.display = 'none'; }, 300); 
+            this.appContainer.classList.remove('hidden');
+            setTimeout(() => this.appContainer.classList.remove('opacity-0'), 50);
             App.init(); // Initialize the main app
-        } else {
-            errorMsg.textContent = 'Incorrect Password.';
-            errorMsg.classList.remove('hidden');
-            passwordInput.value = '';
-            loginBox.classList.add('animate-shake');
-            setTimeout(() => loginBox.classList.remove('animate-shake'), 500);
+        },
+        
+        showLogin() {
+            currentUser = null;
+            this.loginOverlay.style.display = 'flex';
+            this.loginOverlay.classList.remove('opacity-0');
+            this.appContainer.classList.add('hidden');
+            this.appContainer.classList.add('opacity-0');
         }
     };
-    
-    unlockButton.onclick = attemptLogin;
-    passwordInput.onkeyup = (e) => {
-        errorMsg.classList.add('hidden');
-        if (e.key === 'Enter') attemptLogin();
-    };
 
-    // --- 2. MAIN APP LOGIC ---
-
+    // --- 4. MAIN APP LOGIC ---
     const App = {
-        SAVE_KEY: 'qcChecklistData_v2', // Changed key for new data structure
-        
-        // --- UPDATED TASK LISTS ---
+        SAVE_KEY: `qcChecklistData_v3_${currentUser ? currentUser.uid : 'default'}`,
         STANDARD_TASKS: ['Floor', 'Cupboards', 'Skirting board and switch', 'Windows', 'Doors'],
         KITCHEN_EXTRA_TASKS: ['Oven', 'Cooker hood', 'fridge', 'Washing machine & Dryer', 'Dishwasher'],
-        
         data: {
             client: { name: '', address: '' },
             sections: [],
@@ -204,6 +283,9 @@
         drawing: false,
 
         init() {
+            // Update save key to be user-specific
+            this.SAVE_KEY = `qcChecklistData_v3_${currentUser.uid}`;
+            
             // DOM Elements
             this.dateElement = document.getElementById('current-date');
             this.checklistBody = document.getElementById('checklist-body');
@@ -215,7 +297,8 @@
                 year: 'numeric', month: 'long', day: 'numeric'
             })}`;
 
-            // --- UPDATED Button Bindings ---
+            // Button Bindings
+            document.getElementById('logout-button').onclick = () => auth.signOut();
             document.getElementById('add-kitchen-btn').onclick = () => {
                 const kitchenTasks = [...this.STANDARD_TASKS, ...this.KITCHEN_EXTRA_TASKS];
                 this.addSection('Kitchen', kitchenTasks);
@@ -224,57 +307,31 @@
             document.getElementById('add-master-btn').onclick = () => this.addSection('Master Room', this.STANDARD_TASKS);
             document.getElementById('add-guest-btn').onclick = () => this.addSection('Guest Room', this.STANDARD_TASKS);
             document.getElementById('add-custom-btn').onclick = () => this.addSection('Custom Section', []);
-            
             document.getElementById('clear-all-btn').onclick = () => this.handleClearAll();
-            document.getElementById('print-btn').onclick = () => window.print();
+            document.getElementById('submit-btn').onclick = () => this.handleSubmit();
 
-            // Bind Auto-Save Events
-            document.getElementById('client-info-form').addEventListener('input', () => this.saveData());
-            this.checklistBody.addEventListener('input', () => this.saveData());
+            // Auto-Save Events
+            document.getElementById('client-info-form').addEventListener('input', () => this.saveDataToLocal());
+            this.checklistBody.addEventListener('input', () => this.saveDataToLocal());
 
             // Init Signature Pad
             this.initSignaturePad();
             
             // Load, Render, and Init Icons
-            this.loadData();
+            this.loadDataFromLocal();
             this.renderAll();
             lucide.createIcons();
         },
 
-        // --- Auto-Save & Load (FEATURE 2) ---
-        
-        saveData() {
-            const data = {
-                client: {
-                    name: document.getElementById('client-name').value,
-                    address: document.getElementById('client-address').value
-                },
-                sections: [],
-                signature: this.canvas.toDataURL() // Save signature image
-            };
-
-            document.querySelectorAll('.section-card').forEach(sectionEl => {
-                const section = {
-                    id: sectionEl.dataset.id,
-                    name: sectionEl.querySelector('.section-name-input').value,
-                    tasks: []
-                };
-                sectionEl.querySelectorAll('.task-item').forEach(taskEl => {
-                    section.tasks.push({
-                        id: taskEl.dataset.id,
-                        name: taskEl.querySelector('.task-input').value,
-                        checked: taskEl.querySelector('input[type="checkbox"]').checked
-                    });
-                });
-                data.sections.push(section);
-            });
-            
+        // --- Auto-Save (Local Storage) ---
+        saveDataToLocal() {
+            const data = this.getCurrentData();
             this.data = data;
             localStorage.setItem(this.SAVE_KEY, JSON.stringify(this.data));
             console.log('Data saved to localStorage');
         },
 
-        loadData() {
+        loadDataFromLocal() {
             const savedData = localStorage.getItem(this.SAVE_KEY);
             if (savedData) {
                 this.data = JSON.parse(savedData);
@@ -300,27 +357,94 @@
         },
         
         handleClearAll() {
-            if (confirm('This will clear all data, including client info and signature. Are you sure?')) {
+            if (confirm('This will clear all data on this form. Are you sure?')) {
                 localStorage.removeItem(this.SAVE_KEY);
                 window.location.reload(); // Easiest way to reset everything
             }
         },
 
-        // --- Checklist Rendering ---
+        // --- Database Submit (NEW) ---
+        getCurrentData() {
+            const data = {
+                client: {
+                    name: document.getElementById('client-name').value,
+                    address: document.getElementById('client-address').value,
+                    apptDate: document.getElementById('current-date').textContent // Store the date
+                },
+                sections: [],
+                signatureDataURL: this.canvas.toDataURL(), // Save signature as data URL
+                inspectorEmail: currentUser.email,
+                inspectorUid: currentUser.uid,
+                submittedAt: new Date().toISOString()
+            };
 
+            document.querySelectorAll('.section-card').forEach(sectionEl => {
+                const section = {
+                    id: sectionEl.dataset.id,
+                    name: sectionEl.querySelector('.section-name-input').value,
+                    tasks: []
+                };
+                sectionEl.querySelectorAll('.task-item').forEach(taskEl => {
+                    section.tasks.push({
+                        id: taskEl.dataset.id,
+                        name: taskEl.querySelector('.task-input').value,
+                        checked: taskEl.querySelector('input[type="checkbox"]').checked
+                    });
+                });
+                data.sections.push(section);
+            });
+            return data;
+        },
+
+        handleSubmit() {
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('submit-btn-text');
+            
+            const dataToSubmit = this.getCurrentData();
+            
+            if (!dataToSubmit.client.name) {
+                alert('Please enter a Client Name before submitting.');
+                return;
+            }
+            if (!dataToSubmit.signatureDataURL.includes('data:image/png;base64,') || dataToSubmit.signatureDataURL.length < 2000) {
+                 if (!confirm('You have not provided a customer signature. Are you sure you want to submit?')) {
+                     return;
+                 }
+            }
+
+            submitBtn.disabled = true;
+            btnText.textContent = 'Submitting...';
+
+            // Submit to Firestore
+            db.collection('checklists').add(dataToSubmit)
+                .then(docRef => {
+                    console.log("Document written with ID: ", docRef.id);
+                    btnText.textContent = 'Success!';
+                    alert('Checklist submitted successfully!');
+                    // Clear form after success
+                    localStorage.removeItem(this.SAVE_KEY);
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error("Error adding document: ", error);
+                    alert('Error: Could not submit checklist. Please check internet and try again.');
+                    submitBtn.disabled = false;
+                    btnText.textContent = 'Submit to Office';
+                });
+        },
+
+        // --- Checklist Rendering (Same as V3) ---
         renderAll() {
-            this.checklistBody.innerHTML = ''; // Clear all sections
+            this.checklistBody.innerHTML = '';
             this.data.sections.forEach(section => {
                 this.checklistBody.appendChild(this.createSectionElement(section));
             });
             lucide.createIcons();
         },
-        
         createSectionElement(section) {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = 'section-card bg-white rounded-lg border border-gray-200 p-4 page-break';
             sectionDiv.dataset.id = section.id;
-            
             sectionDiv.innerHTML = `
                 <div class="flex justify-between items-center mb-3">
                     <input type="text" class="section-name-input text-xl font-bold text-gray-800 w-full border-b-2 border-gray-200 focus:border-blue-500 outline-none print-no-border" placeholder="Section Name" value="${section.name}">
@@ -328,93 +452,70 @@
                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                     </button>
                 </div>
-                <div class="task-list space-y-2">
-                    <!-- Tasks go here -->
-                </div>
+                <div class="task-list space-y-2"></div>
                 <button class="add-task-btn text-sm text-blue-600 hover:text-blue-800 mt-3 no-print flex items-center gap-1">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Add Custom Task
                 </button>
             `;
-
             const taskList = sectionDiv.querySelector('.task-list');
             section.tasks.forEach(task => {
                 taskList.appendChild(this.createTaskElement(task));
             });
-            
-            // Bind events for this new section
             sectionDiv.querySelector('.add-task-btn').addEventListener('click', (e) => this.handleAddTask(e, section.id));
             sectionDiv.querySelector('.delete-section-btn').addEventListener('click', (e) => this.handleDeleteSection(e, section.id));
-            
             return sectionDiv;
         },
-
         createTaskElement(task) {
             const taskId = `task-${task.id}`;
             const taskDiv = document.createElement('div');
             taskDiv.className = 'task-item flex items-center gap-2';
             taskDiv.dataset.id = task.id;
-            
             taskDiv.innerHTML = `
                 <input id="${taskId}" type="checkbox" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300 no-print" ${task.checked ? 'checked' : ''}>
                 <label for="${taskId}" class="flex-1 flex items-center">
-                    <span class="print-only"></span> <!-- For print symbol -->
+                    <span class="print-only"></span>
                     <input type="text" class="task-input text-gray-700" placeholder="Enter task name..." value="${task.name}">
                 </label>
                 <button class="delete-task-btn text-gray-300 hover:text-red-500 no-print">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             `;
-            
             taskDiv.querySelector('.delete-task-btn').addEventListener('click', (e) => this.handleDeleteTask(e, task.id));
             return taskDiv;
         },
-
-        // --- Checklist Event Handlers ---
-        
         addSection(name, tasks) {
             const newSection = {
                 id: `section-${Date.now()}`,
                 name: name,
-                tasks: tasks.map((taskName, i) => ({
-                    id: `task-${Date.now() + i}`,
-                    name: taskName,
-                    checked: false
-                }))
+                tasks: tasks.map((taskName, i) => ({ id: `task-${Date.now() + i}`, name: taskName, checked: false }))
             };
             this.data.sections.push(newSection);
             this.renderAll();
-            this.saveData();
+            this.saveDataToLocal();
         },
-
         handleAddTask(e, sectionId) {
             const section = this.data.sections.find(s => s.id === sectionId);
-            section.tasks.push({
-                id: `task-${Date.now()}`,
-                name: '',
-                checked: false
-            });
-            this.renderAll(); // Re-render to add the new task
-            this.saveData();
+            section.tasks.push({ id: `task-${Date.now()}`, name: '', checked: false });
+            this.renderAll();
+            this.saveDataToLocal();
         },
-
         handleDeleteSection(e, sectionId) {
-            if (confirm('Are you sure you want to delete this entire section?')) {
+            if (confirm('Delete this section?')) {
                 this.data.sections = this.data.sections.filter(s => s.id !== sectionId);
                 this.renderAll();
-                this.saveData();
+                this.saveDataToLocal();
             }
         },
-        
         handleDeleteTask(e, taskId) {
             this.data.sections.forEach(section => {
                 section.tasks = section.tasks.filter(t => t.id !== taskId);
             });
             this.renderAll();
-            this.saveData();
+            this.saveDataToLocal();
         },
 
-        // --- Signature Pad Logic ---
+        // --- Signature Pad Logic (Same as V3) ---
         initSignaturePad() {
             const resizeCanvas = () => {
                 const rect = this.canvas.getBoundingClientRect();
@@ -438,30 +539,19 @@
                 const evt = e.touches ? e.touches[0] : e;
                 return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
             };
-            const startDrawing = (e) => {
-                e.preventDefault();
-                this.drawing = true;
-                const pos = getPos(e);
-                this.ctx.moveTo(pos.x, pos.y);
-            };
+            const startDrawing = (e) => { e.preventDefault(); this.drawing = true; const pos = getPos(e); this.ctx.moveTo(pos.x, pos.y); };
             const stopDrawing = (e) => {
                 if (!this.drawing) return;
                 this.drawing = false;
                 this.ctx.beginPath();
-                // Auto-save signature when drawing stops
-                setTimeout(() => this.saveData(), 100); 
+                setTimeout(() => this.saveDataToLocal(), 100); 
             };
             const draw = (e) => {
-                e.preventDefault();
-                if (!this.drawing) return;
+                e.preventDefault(); if (!this.drawing) return;
                 const pos = getPos(e);
-                this.ctx.lineWidth = 3;
-                this.ctx.lineCap = 'round';
-                this.ctx.strokeStyle = '#1f2937';
-                this.ctx.lineTo(pos.x, pos.y);
-                this.ctx.stroke();
-                this.ctx.beginPath();
-                this.ctx.moveTo(pos.x, pos.y);
+                this.ctx.lineWidth = 3; this.ctx.lineCap = 'round'; this.ctx.strokeStyle = '#1f2937';
+                this.ctx.lineTo(pos.x, pos.y); this.ctx.stroke();
+                this.ctx.beginPath(); this.ctx.moveTo(pos.x, pos.y);
             };
             
             this.canvas.addEventListener('mousedown', startDrawing);
@@ -474,25 +564,24 @@
             
             document.getElementById('clear-sig-btn').addEventListener('click', () => {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.data.signature = null; // Clear from data
-                this.saveData(); // Save the cleared signature
+                this.data.signature = null;
+                this.saveDataToLocal();
             });
         }
     };
     
-    // --- 3. PWA Service Worker Registration (NEW) ---
+    // --- 5. PWA Service Worker Registration ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            // Use './sw.js' to be explicit about the root
             navigator.serviceWorker.register('./sw.js') 
-                .then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                })
-                .catch(err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
+                .then(reg => console.log('ServiceWorker registration successful.', reg.scope))
+                .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
     }
+    
+    // --- 6. START LOGIN CHECK ---
+    Login.init();
+
 </script>
 
 </body>

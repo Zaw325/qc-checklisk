@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<!-- Tailwind CSS -->
+<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js"></script>
+<!-- Firebase Libraries -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'admin-red': '#dc2626', // red-600
+                }
+            }
+        }
+    }
+</script>
+<style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+</style>
+
+</head>
+<body class="bg-gray-800 text-gray-100">
+<!-- 1. Login Modal -->
+<div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+        <h3 class="text-xl font-bold text-gray-800 text-center mb-4">Admin Panel</h3>
+        <p class="text-center text-gray-600 mb-6">Enter Admin Credentials</p>
+        <input type="email" id="email-input" placeholder="Admin Email..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-red text-sm transition-shadow text-gray-900">
+        <input type="password" id="password-input" placeholder="Admin Password..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-admin-red text-sm transition-shadow mt-2 text-gray-900">
+        <button id="unlock-button" class="w-full bg-admin-red text-white py-3 rounded-lg font-semibold mt-4 hover:bg-red-700 transition-colors shadow-md">
+            Sign In
+        </button>
+        <p id="error-msg" class="text-red-600 text-sm mt-3 text-center hidden font-medium"></p>
+    </div>
+</div>
+
+<!-- 2. App Container (Hidden by default) -->
+<div id="app-container" class="hidden opacity-0 transition-opacity duration-500 min-h-screen bg-gray-800">
+    
+    <!-- Navbar -->
+    <nav class="bg-gray-900 text-white px-4 py-3 shadow-lg sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-admin-red/80 rounded-lg"><i data-lucide="shield-alert" class="w-5 h-5"></i></div>
+                <span class="font-bold tracking-wide">Admin Panel</span>
+            </div>
+            <div>
+                <span id="user-email" class="text-sm text-gray-400 mr-4"></span>
+                <button id="logout-button" title="Logout" class="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-all">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Create User Card -->
+        <div class="bg-gray-900 p-6 rounded-lg shadow-xl">
+            <h3 class="text-lg font-semibold text-white mb-4">Create New Inspector Account</h3>
+            <div class="space
+

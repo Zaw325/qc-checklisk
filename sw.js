@@ -1,54 +1,22 @@
-const CACHE_NAME = 'qc-checklist-v2'; // Cache version အသစ် ပြောင်းလိုက်ပါပြီ
-​// V5 FIX: REPO_NAME ကို ဖြုတ်ပြီး Relative Paths (./) ကို ပြောင်းသုံးထားပါတယ်
-const URLS_TO_CACHE = [
-'./',
-'./index.html',
-'./manifest.json',
-'https://www.google.com/search?q=https://cdn.tailwindcss.com',
-'https://www.google.com/search?q=https://unpkg.com/lucide-react%400.395.0/dist/umd/lucide.js',
-'https://www.google.com/search?q=https://placehold.co/192x192/2563eb/ffffff%3Ftext%3DQC',
-'https://www.google.com/search?q=https://placehold.co/512x512/2563eb/ffffff%3Ftext%3DQC'
+// QC Checklist Service Worker
+const CACHE_NAME = 'qc-check-v1';
+const urlsToCache = [
+  '.',
+  'index.html',
+  'manifest.json'
 ];
-​// Install event
+
 self.addEventListener('install', event => {
-event.waitUntil(
-caches.open(CACHE_NAME)
-.then(cache => {
-console.log('Opened cache');
-return cache.addAll(URLS_TO_CACHE);
-})
-.catch(err => {
-console.error('Failed to open cache: ', err);
-})
-);
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
 });
-​// Fetch event (Cache-first strategy)
+
 self.addEventListener('fetch', event => {
-event.respondWith(
-caches.match(event.request)
-.then(response => {
-// Cache hit - return response
-if (response) {
-return response;
-}
-// Not in cache - fetch from network
-return fetch(event.request);
-}
-)
-);
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+  );
 });
-​// Activate event - remove old caches
-self.addEventListener('activate', event => {
-const cacheWhitelist = [CACHE_NAME];
-event.waitUntil(
-caches.keys().then(cacheNames => {
-return Promise.all(
-cacheNames.map(cacheName => {
-if (cacheWhitelist.indexOf(cacheName) === -1) {
-return caches.delete(cacheName);
-}
-})
-);
-})
-);
-});
+

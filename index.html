@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QC Checklist V5 (Firebase)</title>
+<title>QC Checklist V6 (Firebase)</title>
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Lucide Icons -->
@@ -75,7 +75,7 @@
 
 </head>
 <body class="bg-gray-100 min-h-screen">
-<!-- 1. Login Modal (NEW: Firebase Auth) -->
+<!-- 1. Login Modal (No Change) -->
 <div id="login-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300">
     <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm mx-4">
         <h3 class="text-xl font-bold text-gray-800 text-center mb-4">Mrs. Sparkle</h3>
@@ -92,7 +92,7 @@
 <!-- 2. Main App (Hidden by default) -->
 <div id="app-container" class="max-w-2xl mx-auto p-4 md:p-8 hidden opacity-0 transition-opacity duration-500">
     
-    <!-- App Header -->
+    <!-- App Header (No Change) -->
     <div class="flex justify-between items-center mb-4 no-print">
         <h2 class="text-lg font-bold text-gray-700">Inspector Portal</h2>
         <button id="logout-button" class="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1">
@@ -103,7 +103,7 @@
     
     <div class="bg-white rounded-lg shadow-xl overflow-hidden">
         
-        <!-- Header Section -->
+        <!-- Header Section (No Change) -->
         <div class="p-6 md:p-8 text-center bg-gray-50"> 
             <h1 class="text-xl font-semibold text-gray-700">
                 Mrs. Sparkle
@@ -114,25 +114,28 @@
             <p id="current-date" class="text-sm text-gray-500 mt-1">Date: ...</p>
         </div>
         
-        <!-- Client Info (Auto-Saved) -->
+        <!-- Client Info (No Change) -->
         <div class="p-4 md:p-6 space-y-4" id="client-info-form">
             <input type="text" id="client-name" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Client Name..." data-save="client.name">
             <input type="text" id="client-address" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Enter Address..." data-save="client.address">
         </div>
 
-        <!-- Checklist Body -->
+        <!-- Checklist Body (No Change) -->
         <div id="checklist-body" class="p-4 md:p-6 space-y-6">
             <!-- Sections will be dynamically injected here -->
         </div>
 
-        <!-- Add Section Buttons -->
+        <!-- *** MODIFIED (V6): Add Section Buttons *** -->
         <div class="p-4 md:p-6 bg-gray-50 border-t border-gray-100 no-print">
             <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Add Pre-defined Sections</label>
-            <div class="grid grid-cols-2 gap-2 mb-2">
+            <!-- Changed to grid-cols-3 to fit more buttons -->
+            <div class="grid grid-cols-3 gap-2 mb-2">
                 <button id="add-kitchen-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Kitchen</button>
-                <button id="add-living-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Living Room</button>
-                <button id="add-master-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Master Room</button>
-                <button id="add-guest-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Guest Room</button>
+                <button id="add-living-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Living</button>
+                <button id="add-master-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Master</button>
+                <button id="add-guest-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Guest</button>
+                <!-- NEW BUTTON -->
+                <button id="add-bathroom-btn" class="w-full bg-button-dark text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm">Add Bathroom</button>
             </div>
             <button id="add-custom-btn" class="w-full bg-gray-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
@@ -140,7 +143,7 @@
             </button>
         </div>
 
-        <!-- Signature Section -->
+        <!-- Signature Section (No Change) -->
         <div class="p-4 md:p-6 border-t border-gray-200">
             <h3 class="text-lg font-bold text-gray-800 mb-2">Customer Signature</h3>
             <p class="text-sm text-gray-500 mb-3">I confirm that the service has been completed to my satisfaction.</p>
@@ -152,11 +155,17 @@
             </button>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="p-6 bg-gray-100 border-t border-gray-200 grid grid-cols-2 gap-4 no-print">
+        <!-- *** MODIFIED (V6): Action Buttons *** -->
+        <!-- Changed to grid-cols-3 to fit Print button -->
+        <div class="p-6 bg-gray-100 border-t border-gray-200 grid grid-cols-3 gap-4 no-print">
             <button id="clear-all-btn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="trash-2" class="w-5 h-5"></i>
                 <span>Clear Form</span>
+            </button>
+            <!-- NEW BUTTON -->
+            <button id="print-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i>
+                <span>Print</span>
             </button>
             <button id="submit-btn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="send" class="w-5 h-5"></i>
@@ -167,7 +176,7 @@
 </div>
 
 <script>
-    // --- 1. FIREBASE CONFIG ---
+    // --- 1. FIREBASE CONFIG (No Change) ---
     const firebaseConfig = {
       apiKey: "AIzaSyDyuCbPWKCcWYqPCcxW92wE2nZFUu_hC-c",
       authDomain: "mrs-sparkles-qc-app.firebaseapp.com",
@@ -177,12 +186,12 @@
       appId: "1:692678390922:web:7cb5b1275e334f9fb0a973"
     };
     
-    // --- 2. GLOBAL VARS ---
+    // --- 2. GLOBAL VARS (No Change) ---
     let db;
     let auth;
     let currentUser; // Store the logged-in user
 
-    // --- 3. LOGIN LOGIC ---
+    // --- 3. LOGIN LOGIC (No Change) ---
     const Login = {
         init() {
             // Get elements
@@ -268,11 +277,13 @@
         }
     };
 
-    // --- 4. MAIN APP LOGIC ---
+    // --- 4. MAIN APP LOGIC (*** MODIFIED V6 ***) ---
     const App = {
         SAVE_KEY: `qcChecklistData_v3_${currentUser ? currentUser.uid : 'default'}`,
         STANDARD_TASKS: ['Floor', 'Cupboards', 'Skirting board and switch', 'Windows', 'Doors'],
         KITCHEN_EXTRA_TASKS: ['Oven', 'Cooker hood', 'fridge', 'Washing machine & Dryer', 'Dishwasher'],
+        // NEW TASK LIST
+        BATHROOM_TASKS: ['Floor', 'Toilet', 'Sink & Mirror', 'Shower / Bathtub', 'Doors'],
         data: {
             client: { name: '', address: '' },
             sections: [],
@@ -306,8 +317,15 @@
             document.getElementById('add-living-btn').onclick = () => this.addSection('Living Room', this.STANDARD_TASKS);
             document.getElementById('add-master-btn').onclick = () => this.addSection('Master Room', this.STANDARD_TASKS);
             document.getElementById('add-guest-btn').onclick = () => this.addSection('Guest Room', this.STANDARD_TASKS);
+            // NEW BUTTON BINDING
+            document.getElementById('add-bathroom-btn').onclick = () => this.addSection('Bathroom', this.BATHROOM_TASKS);
+            
             document.getElementById('add-custom-btn').onclick = () => this.addSection('Custom Section', []);
             document.getElementById('clear-all-btn').onclick = () => this.handleClearAll();
+            
+            // NEW BUTTON BINDING
+            document.getElementById('print-btn').onclick = () => window.print();
+            
             document.getElementById('submit-btn').onclick = () => this.handleSubmit();
 
             // Auto-Save Events
@@ -323,7 +341,7 @@
             lucide.createIcons();
         },
 
-        // --- Auto-Save (Local Storage) ---
+        // --- Auto-Save (Local Storage) (No Change) ---
         saveDataToLocal() {
             const data = this.getCurrentData();
             this.data = data;
@@ -363,7 +381,7 @@
             }
         },
 
-        // --- Database Submit (NEW) ---
+        // --- Database Submit (No Change) ---
         getCurrentData() {
             const data = {
                 client: {
@@ -433,7 +451,7 @@
                 });
         },
 
-        // --- Checklist Rendering (Same as V3) ---
+        // --- Checklist Rendering (No Change) ---
         renderAll() {
             this.checklistBody.innerHTML = '';
             this.data.sections.forEach(section => {
@@ -515,7 +533,7 @@
             this.saveDataToLocal();
         },
 
-        // --- Signature Pad Logic (Same as V3) ---
+        // --- Signature Pad Logic (No Change) ---
         initSignaturePad() {
             const resizeCanvas = () => {
                 const rect = this.canvas.getBoundingClientRect();
@@ -570,7 +588,7 @@
         }
     };
     
-    // --- 5. PWA Service Worker Registration ---
+    // --- 5. PWA Service Worker Registration (No Change) ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js') 
@@ -579,10 +597,11 @@
         });
     }
     
-    // --- 6. START LOGIN CHECK ---
+    // --- 6. START LOGIN CHECK (No Change) ---
     Login.init();
 
 </script>
 
 </body>
 </html>
+
